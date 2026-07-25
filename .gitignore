@@ -1,0 +1,6 @@
+# Build output
+/build/
+/build-*/
+
+# Locally built firmware images kept for reflashing
+/recovery/
