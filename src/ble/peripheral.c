@@ -59,6 +59,18 @@ static void processTMOSMsg(tmos_event_hdr_t *pMsg)
 	}
 }
 
+/* Whether the badge is meant to be discoverable.
+ *
+ * GAPROLE_ADVERT_ENABLED cannot answer that on its own: the stack clears it
+ * for the duration of a link, so it reads false whenever anyone is connected
+ * and says nothing about what should happen once they leave. This tracks the
+ * intent separately, and link_onTerminated() consults it instead of restarting
+ * advertising unconditionally.
+ *
+ * Starts TRUE to match the GAPRole default; ble_setup() clears it at boot
+ * unless ble_always_on is set. */
+static uint8_t adv_wanted = TRUE;
+
 static void enable_advertising(uint8_t enable)
 {
 	GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8), &enable);
@@ -92,7 +104,10 @@ static void link_onTerminated(gapRoleEvent_t *pe)
 	gapTerminateLinkEvent_t *event = (gapTerminateLinkEvent_t *)pe;
 	GAPRole_TerminateLink(pe->linkCmpl.connectionHandle);
 	legacy_reset_auth(); //clears authorised flag on disconnect
-	enable_advertising(TRUE);
+	/* Only re-advertise if the badge is still meant to be discoverable.
+	 * Restarting unconditionally left it open after every transfer, so
+	 * further uploads succeeded without going through BT-PAIRING again. */
+	enable_advertising(adv_wanted);
 
 	if(event->connectionHandle == conn_list.connHandle) {
 		conn_list.connHandle = GAP_CONNHANDLE_INIT;
@@ -177,14 +192,14 @@ static uint16 peripheral_task(uint8 task_id, uint16 events)
 
 void ble_enable_advertise()
 {
-	uint8 e = TRUE;
-	GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8), &e);
+	adv_wanted = TRUE;
+	enable_advertising(TRUE);
 }
 
 void ble_disable_advertise()
 {
-	uint8 e = FALSE;
-	GAPRole_SetParameter(GAPROLE_ADVERT_ENABLED, sizeof(uint8), &e);
+	adv_wanted = FALSE;
+	enable_advertising(FALSE);
 }
 
 // len should not exceed 20 chars excluding null-terminate char. Otherwise it
