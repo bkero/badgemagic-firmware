@@ -809,6 +809,12 @@ void handle_after_rx()
         tmos_stop_task(common_taskid, STOPWATCH_TICK);
         sw_state = SW_STOPPED;
         clock_active = 0;
+        /* The transfer is finished and DOWNLOAD mode is over, so close the
+         * advertisement as well. Leaving it up keeps the badge writable from
+         * the normal display mode, indefinitely and without the user having
+         * gone through BT-PAIRING. ble_always_on is the opt-in for that. */
+        if (!badge_cfg.ble_always_on)
+            ble_disable_advertise();
         mode_setup_normal();
     }
 }
