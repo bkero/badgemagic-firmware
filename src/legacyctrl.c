@@ -7,17 +7,29 @@
 #include "usb/usb.h"
 
 static uint16_t auth_code = 0;
-static uint8_t  authorized = 0;
+/* No PIN is required until one is actually set, so the default is authorized.
+ * Previously this defaulted to 0 and nothing cleared it when ble_security was
+ * off, which rejected every transfer with "rejected - not authed". */
+static uint8_t  authorized = 1;
+static uint8_t  auth_required = 0;
 
 void legacy_set_auth_code(uint16_t code)
 {
-	auth_code  = code;
-	authorized = 0;
+	auth_code     = code;
+	auth_required = 1;
+	authorized    = 0;
+}
+
+/* BLE security disabled: accept transfers without a PIN, across reconnects. */
+void legacy_clear_auth_requirement(void)
+{
+	auth_required = 0;
+	authorized    = 1;
 }
 
 void legacy_reset_auth()
 {
-	authorized = 0;
+	authorized = auth_required ? 0 : 1;
 }
 
 int legacy_ble_rx(uint8_t *val, uint16_t len)

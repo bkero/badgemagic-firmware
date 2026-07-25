@@ -481,6 +481,9 @@ static void menu_select(){
 		#endif
 				disp_auth_code(auth_code);
 			} else {
+				/* Security off means no PIN is required - say so, otherwise
+				 * legacy_ble_rx() rejects every transfer as "not authed". */
+				legacy_clear_auth_requirement();
 				ble_enable_advertise();
 				start_ble_animation();
 		#if HW_KEY_COUNT == 4
