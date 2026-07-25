@@ -67,6 +67,17 @@ static const char *menu_labels[] = {
 				(ANI_BASE_SPEED_T - ((speed_level) \
 				* ANI_BASE_SPEED_T / 8))
 
+/* LED matrix refresh tick.
+ *
+ * TMR0_IRQHandler() walks 22 column pairs at four ticks each, so a frame is
+ * 88 ticks. The previous 4 kHz put that at 45 Hz, below flicker fusion and
+ * plainly visible as strobing -- worst at the default brightness of 0, where
+ * the duty cycle is one tick in four. 16 kHz gives 182 Hz.
+ *
+ * Lower this if the interrupt rate ever crowds the BLE stack; 12000 still
+ * yields 136 Hz and 8000 yields 91 Hz. */
+#define LED_TICK_HZ         (16000)
+
 #define ANI_NEXT_STEP       (1 << 0)
 #define ANI_MARQUE          (1 << 1)
 #define ANI_FLASH           (1 << 2)
@@ -831,7 +842,7 @@ int main()
 	usb_start();
 
 	led_init();
-	TMR0_TimerInit((FREQ_SYS / 2000) / 2);
+	TMR0_TimerInit(FREQ_SYS / LED_TICK_HZ);
 	TMR0_ITCfg(ENABLE, TMR0_3_IT_CYC_END);
 	PFIC_EnableIRQ(TMR0_IRQn);
 
@@ -896,7 +907,10 @@ void TMR0_IRQHandler(void)
 				i = 0;
 			led_write2dcol(i >> 2, fb[i >> 1], fb[(i >> 1) + 1]);
 		}
-		else if (state > (badge_cfg.led_brightness&3))
+		/* Blank once, on the first tick past the on-period. Repeating it on
+		 * every later tick re-walked all 23 pins to no effect, which at the
+		 * default brightness was three redundant passes per column pair. */
+		else if (state == (badge_cfg.led_brightness&3) + 1)
 			leds_releaseall();
 
 		TMR0_ClearITFlag(TMR0_3_IT_CYC_END);
