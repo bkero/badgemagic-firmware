@@ -160,6 +160,10 @@ endif
 ifeq ($(HARDWARE_REV3), 1)
 CFLAGS += -DHARDWARE_REV3=$(HARDWARE_REV3)
 endif
+# Board silkscreen B1144C_260404 (USB-C, 2026-04). Hybrid LED pinout, see leddrv.c
+ifeq ($(HARDWARE_B1144C), 1)
+CFLAGS += -DHARDWARE_B1144C=$(HARDWARE_B1144C)
+endif
 
 CFLAGS += -DHW_KEY_COUNT=$(KEY_COUNT)
 

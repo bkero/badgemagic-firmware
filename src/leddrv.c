@@ -91,6 +91,15 @@ static void gpio_bank_apply(pinbank_t *bank)
 	GPIO_Pin_##pinnr_ \
 }
 
+/*
+ * HARDWARE_B1144C: board silkscreen B1144C_260404 (USB-C, 2026-04 date code).
+ * A hybrid of the two older layouts, determined empirically by sweeping each
+ * pin as anode and recording which column pair lit:
+ *   J, K  -> PB15/PB14, as on the Micro-USB (REV1) boards
+ *   T     -> PB6,       as on the USB-C (REV3) boards
+ * All other positions are identical in both older tables and were confirmed
+ * by the same sweep.
+ */
 static const pindesc_t led_pins[LED_PINCOUNT] = {
 	PINDESC(A, 15), // A
 	PINDESC(B, 18), // B
@@ -119,7 +128,7 @@ static const pindesc_t led_pins[LED_PINCOUNT] = {
 	PINDESC(B, 4),  // Q
 	PINDESC(B, 2),  // R
 	PINDESC(B, 1),  // S
-#ifdef HARDWARE_REV3
+#if defined(HARDWARE_REV3) || defined(HARDWARE_B1144C)
 	PINDESC(B, 6), // T
 #else
 	PINDESC(B, 23), // T

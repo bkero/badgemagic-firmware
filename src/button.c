@@ -19,7 +19,13 @@ static uint16_t btn_task(tmosTaskID, uint16_t);
 
 void btn_init()
 {
+#ifdef HARDWARE_B1144C
+	/* B1144C wires KEY1 to GND when pressed, like KEY2, rather than to VCC.
+	 * Determined by scanning both polarities; see src/diag_btn.c. */
+	GPIOA_ModeCfg(KEY1_PIN, GPIO_ModeIN_PU);
+#else
 	GPIOA_ModeCfg(KEY1_PIN, GPIO_ModeIN_PD);
+#endif
 	GPIOB_ModeCfg(KEY2_PIN, GPIO_ModeIN_PU);
 
 	TMR3_TimerInit(FREQ_SYS/BUTTON_SCAN_FREQ);
